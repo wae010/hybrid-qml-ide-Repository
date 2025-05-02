@@ -1,0 +1,54 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: "lts/*"
+        cache: "npm"
+        cache-dependency-path: app/frontend/package-lock.json
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r app/backend/requirements.txt
+        pip install pylint flake8 black pytest
+
+    - name: Install Node dependencies
+      run: |
+        cd app/frontend
+        npm ci
+
+    - name: Lint Python
+      run: |
+        flake8 app/backend --count --select=E9,F63,F7,F82 --show-source --statistics
+        # black app/backend --check  # uncomment once code exists
+
+    - name: Lint Frontend
+      run: |
+        cd app/frontend
+        npm run lint || echo "eslint warnings ignored for now"
+
+    # Placeholder for tests
+    # - name: Run Python tests
+    #   run: |
+    #     cd app/backend
+    #     pytest -q
